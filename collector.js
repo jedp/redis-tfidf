@@ -22,7 +22,15 @@ var TERMS = 'terms'         // set  -> { term }
 var _ = require('underscore');
 
 var r = require('redis').createClient();
-var stemmer = require('./lib/porter-stemmer/porter').stemmer;
+var stemmer = require('./lib/porter-stemmer/porter').memoizingStemmer;
+
+function stemText(text) {
+  return _.map(
+    text.trim().split(/\s+/),
+    function(t) { return stemmer(t.replace(/\W+/g, '').toLowerCase()) });
+}
+
+
 
 calculateWeight = function (id, term, callback) {
   // For a given term and document id, calculate the 
@@ -162,9 +170,7 @@ updateDocumentLength = function(id, terms, callback) {
 readDocument = function(id, text, callback) {
   // Collect all terms and words in a document.
   // Remove extraneous characters and map to lower-case.
-  var terms = _.map(
-    text.trim().split(/\s+/),
-    function(t) { return stemmer(t.replace(/\W+/g, '').toLowerCase()) });
+  var terms = stemText(text);
   
   updateDocumentLength(id, terms, function(err) {
     calculateTermFrequency(id, terms, function(err) {
@@ -190,5 +196,34 @@ exports.indexDocument = indexDocument = function(id, text, callback) {
   });
 }
 
+exports.search = search = function(phrase, callback) {
+  // find the documents that are the best fit for phrase
+  var terms = stemText(phrase);
+  var scores = {};
+  var iter = 0;
+  var ids = [];
+  _.each(terms, function(term) {
+    r.zrangebyscore(WGT_PREFIX+term, 0, 10, 'WITHSCORES', function(err, members) {
+      if (err) return callback (err);
 
+      iter ++;
+
+      // process pairwise members: id, score, id, score, ...
+      while (members.length) {
+        var id = parseInt(members.shift());
+        var score = parseFloat(members.shift());
+        scores[id] = (scores[id] ? scores[id] : 0) + score;
+        if (ids.indexOf(id) < 0) {
+          ids.push(id);
+        }
+      }
+
+      if (iter == terms.length) {
+        // sort ids by score, descending
+        ids = ids.sort( function(a, b) { return scores[a] < scores[b] });
+        return callback(null, ids);
+      }
+    });
+  });
+}
 

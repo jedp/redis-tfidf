@@ -121,20 +121,33 @@ module.exports = testCase({
     test.done();
   },
 
-  //testWEIGHT: function(test) {
-    //// test relative weights
-    //test.expect(1);
+  testWEIGHT: function(test) {
+    // test relative weights
+    test.expect(2);
 
-    //// the term 'flan' matters more in doc 3 than in 1
-    //r.zscore('weight:flan', 3, function(err, wgt3) {
-      //r.zscore('weight:flan', 1, function(err, wgt1) {
-        //test.ok(wgt3 > wgt1);
-      //});
-    //});
+    r.zscore('weight:flan', 3, function(err, wgt) {
+      // some number
+      test.ok(wgt > 0);
+    });
 
-    //test.done();
-  //}
+    r.zscore('weight:flan', 1, function(err, wgt) {
+      // null
+      test.ok(!wgt);
+    });
 
+    test.done();
+  },
+
+  testSearch: function(test) {
+    test.expect(1);
+    
+    collector.search("i wanna potato!", function(err, results) {
+      test.ok(results[0] == 2);
+    });
+
+    test.done();
+  }
+  
 
 });
 
