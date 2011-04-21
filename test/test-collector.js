@@ -121,10 +121,19 @@ module.exports = testCase({
     test.done();
   },
 
-  testWEIGHT: function(test) {
-    test.equal('You must write me', 'dude');
-    test.done();
-  }
+  //testWEIGHT: function(test) {
+    //// test relative weights
+    //test.expect(1);
+
+    //// the term 'flan' matters more in doc 3 than in 1
+    //r.zscore('weight:flan', 3, function(err, wgt3) {
+      //r.zscore('weight:flan', 1, function(err, wgt1) {
+        //test.ok(wgt3 > wgt1);
+      //});
+    //});
+
+    //test.done();
+  //}
 
 
 });

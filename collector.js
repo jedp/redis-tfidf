@@ -41,7 +41,7 @@ calculateWeight = function (id, term, callback) {
     if (err) return callback ('in getTF: ' + err);
     if (tf === 0) { 
       // term is not in corpus. no score for you.
-      callback(null, 0.0);
+      return callback(null, 0.0);
     } else {
       r.zscore(LEN, id, function (err, len) {
         if (err) return callback ('in getLEN: ' + err);
@@ -66,8 +66,21 @@ calculateWeight = function (id, term, callback) {
   });
 }
 
-exports.calculateWeights = calculateWeights = function() {
-
+exports.calculateWeights = calculateWeights = function(id, termList, callback) {
+  var iter = 0;
+  var totalTerms = termList.length;
+  _.each(termList, function(t) {
+    calculateWeight(id, t, function(err, wgt) {
+      iter ++;
+      if (err) {
+        return callback('calc weights: ' + err);
+      } 
+      if (iter === totalTerms)  {
+        return callback (null);
+      } 
+      
+    });
+  });
 }
 
 calculateDocumentFrequency = function(id, termList, callback) {
@@ -88,12 +101,12 @@ calculateDocumentFrequency = function(id, termList, callback) {
     r.sadd(DF_PREFIX+t, id, function(err, success) {
       iter ++;
       if (err) { 
-        console.error(err);
-      } else {
-        // after processing each term, move on
-        if (iter === totalTerms) {
-          callback(null, id);
-        }
+        return callback(err);
+      }
+      // after processing each term, move on
+      if (iter === totalTerms) {
+        //return calculateWeights(id, termList, callback);
+        return callback(null);
       }
     });
   });
@@ -124,12 +137,11 @@ calculateTermFrequency = function(id, terms, callback) {
     r.zincrby(TF_PREFIX+t, counts[t], id, function(err, result) {
       iter ++;
       if (err) {
-        console.error(err);
-      } else {
-        // after we have processed all the terms, move on
-        if (iter === numTerms) {
-          calculateDocumentFrequency(id, termList, callback);
-        }
+        return callback(err);
+      } 
+      // after we have processed all the terms, move on
+      if (iter === numTerms) {
+        return callback(null);
       }
     });
   });
@@ -137,11 +149,12 @@ calculateTermFrequency = function(id, terms, callback) {
 
 updateDocumentLength = function(id, terms, callback) {
   // Record the number of terms for this document
-  r.zadd(LEN, terms.length, id, function(err, success) { 
+  var length = terms.length
+  r.zadd(LEN, length, id, function(err, success) { 
     if (err) {
-      callback(new Error(err), null);
+      return callback(new Error(err), null);
     } else {
-      calculateTermFrequency(id, terms, callback);
+      return callback(null, length);
     }
   });
 }
@@ -153,7 +166,15 @@ readDocument = function(id, text, callback) {
     text.trim().split(/\s+/),
     function(t) { return stemmer(t.replace(/\W+/g, '').toLowerCase()) });
   
-  updateDocumentLength(id, terms, callback);
+  updateDocumentLength(id, terms, function(err) {
+    calculateTermFrequency(id, terms, function(err) {
+      calculateDocumentFrequency(id, terms, function(err) {
+        calculateWeights(id, terms, function(err) {
+          if (callback) return callback(err, 'yay');
+        });
+      });
+    });
+  });
 }
 
 exports.indexDocument = indexDocument = function(id, text, callback) {
