@@ -17,7 +17,9 @@ var TF_PREFIX = 'tf:';      // zset -> { documentId, frequency }
 var DF_PREFIX = 'df:';      // set  -> { documentIds }
 var LEN = 'len';            // zset -> { documentId, terms }
 var WGT_PREFIX = 'weight:'; // zset -> { documentId, weight }
+var DOCT_PREFIX = 'doct:';  // set  -> { term }
 var TERMS = 'terms'         // set  -> { term }
+var IDS = 'ids'             // set  -> { document Ids }
 
 var _ = require('underscore');
 
@@ -57,7 +59,7 @@ calculateWeight = function (id, term, callback) {
         var tfd = (tf / len) + 1.0;
         r.get(N, function (err, n) {
           if (err) return callback ('in getN: ' + err);
-          r.scard(DF_PREFIX+term, function (err, df) {
+          r.zcard(DF_PREFIX+term, function (err, df) {
             if (err) return callback ('in getDF: ' + err);
             // inverse overall document frequency for term
             var idf = n / df;
@@ -106,7 +108,7 @@ calculateDocumentFrequency = function(id, termList, callback) {
   var iter = 0;
   var totalTerms = termList.length;
   _.each(termList, function(t) {
-    r.sadd(DF_PREFIX+t, id, function(err, success) {
+    r.zincrby(DF_PREFIX+t, 1, id, function(err, success) {
       iter ++;
       if (err) { 
         return callback(err);
@@ -167,31 +169,87 @@ updateDocumentLength = function(id, terms, callback) {
   });
 }
 
+storeDocumentTerms = function(id, terms, callback) {
+  var iter = 0;
+  var numTerms = terms.length;
+  _.each(terms, function(t) {
+    r.sadd(DOCT_PREFIX+id, t, function(err) {
+      iter ++;
+      if (err) return callback(err);
+      if (iter === numTerms ) {
+        callback(null, numTerms);
+      }
+    });
+  });
+}
+
 readDocument = function(id, text, callback) {
   // Collect all terms and words in a document.
   // Remove extraneous characters and map to lower-case.
   var terms = stemText(text);
   
   updateDocumentLength(id, terms, function(err) {
-    calculateTermFrequency(id, terms, function(err) {
-      calculateDocumentFrequency(id, terms, function(err) {
-        calculateWeights(id, terms, function(err) {
-          if (callback) return callback(err, 'yay');
+    storeDocumentTerms(id, terms, function(err) {
+      calculateTermFrequency(id, terms, function(err) {
+        calculateDocumentFrequency(id, terms, function(err) {
+          calculateWeights(id, terms, function(err) {
+            if (callback) return callback(err, 'yay');
+          });
         });
       });
     });
   });
 }
 
+exports.removeDocument = removeDocument = function(id, callback) {
+  r.sismember(IDS, id, function(err, exists) {
+    if (err) {
+      return callback (err);
+    } else if (!exists) {
+      callback ('no such document');
+    } else {
+      r.decr(N, function(err) {
+        if (err) return callback(err);
+        r.smembers(DOCT_PREFIX+id, function(err, terms) {
+          if (err) callback(err);
+          var iter = 0;
+          _.each(terms, function(term) {
+            r.zscore(DF_PREFIX+term, id, function(err, df) {
+              if (err) callback(err);
+              r.zscore(TF_PREFIX+term, id, function(err, tf) { 
+                r.zadd(TF_PREFIX+term, tf-df, id, function(err) {
+                  if (err) callback(err);
+                  r.zrem(DF_PREFIX+term, id, function(err) {     
+                    if (err) callback(err);
+                    r.zrem(WGT_PREFIX+term, id, function(err) {     
+                      iter ++;
+                      if (iter===terms.length)callback(err);
+                    }); 
+                  });
+                });
+              });     
+            });
+          });
+        });
+      });
+    }
+  });
+};
+
 exports.indexDocument = indexDocument = function(id, text, callback) {
   // Index a document
-  r.sismember('ids', id, function(err, already_indexed) {
-    if (! already_indexed ) { 
-      r.incr(N, function(err, result) { 
-        return readDocument(id, text, callback);
+  r.sismember(IDS, id, function(err, exists) {
+    if (! exists ) { 
+      r.incr(N, function(err) { 
+        r.sadd(IDS, id, function(err) {
+          if (err) return callback(err);
+          return readDocument(id, text, callback);
+        });
       });
     } else {
-      return readDocument(id, rext, callback);
+      readDocument(id, rext, function(err) {
+        if (err) return callback(err);
+      }); 
     }
   });
 }

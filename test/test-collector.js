@@ -37,8 +37,17 @@ module.exports = testCase({
     test.done();
   },
 
+  testStoreTerms: function(test) {
+    // terms for each document have been recorded
+    test.expect(1);
+    r.smembers('doct:1', function(err, results) {
+      test.ok(!err && results.length===3);
+      test.done();
+    });
+  },
+
   testTF: function(test) {
-    // check the frequency of some terms
+    // frequency of terms is correct
     test.expect(4);
 
     // Occurs once in doc1
@@ -69,18 +78,18 @@ module.exports = testCase({
     test.expect(3);
 
     // 'i' is in three documents
-    r.smembers('df:i', function(err, members) {
-      test.equal(members.length, 3);
+    r.zcard('df:i', function(err, count) {
+      test.equal(count, 3);
     });
 
     // 'pie' is in one document
-    r.smembers('df:pie', function(err, members) {
-      test.equal(members.length, 1);
+    r.zcard('df:pie', function(err, count) {
+      test.equal(count, 1);
     });
 
     // 'glug' is in no documents
-    r.smembers('df:glug', function(err, members) {
-      test.equal(members.length, 0);
+    r.zcard('df:glug', function(err, count) {
+      test.equal(count, 0);
     });
 
     test.done();
@@ -138,16 +147,33 @@ module.exports = testCase({
     test.done();
   },
 
+  testIDS: function(test) {
+    test.expect(1);
+    r.smembers('ids', function(err, ids) { 
+      test.ok(ids.length === 3);
+      test.done();
+    });
+  },
+
   testSearch: function(test) {
     test.expect(1);
     
     collector.search("i wanna potato!", function(err, results) {
       test.ok(results[0] == 2);
+      test.done();
     });
 
-    test.done();
+  },
+
+  testRemoveOne: function(test) {
+    test.expect(1);
+    collector.removeDocument(3, function(err) {
+      collector.search('flan', function(err, results) {
+        test.ok(!err && !results.count);
+        test.done();
+      });
+    });
   }
-  
 
 });
 
