@@ -17,8 +17,9 @@ text to the collector:
     > collector.indexDocument(2, "Sorry, I'm thinking about cats again!");
     > collector.indexDocument(3, "Can't hug every cat.");
 
-As documents are indexes, words are tokenized using the Porter stemmer.
-More about that HERE.
+As documents are indexes, words are tokenized using a 
+[Porter stemmer](https://github.com/jedp/porter-stemmer).
+
  
 Searching for Documents
 -----------------------
