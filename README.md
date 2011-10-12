@@ -46,8 +46,42 @@ Document 3 is the best match for "hugging cats", since it contains "cat" and
 "hug".  The other two documents are returned because they are about cats,
 though they're short on hugging.
 
+A Fuller Example
+----------------
+
+The `example/texts` directory contains poems downloaded from Project
+Gutenberg.  The script `librarian.js` splits them up into poems, saves
+them in a redis store (could be anything - the text storage has nothing
+to do with the search mechanism itself), and indexes them.
+
+The resulting 231 poems can be quickly searched:
+
+    $ cd example
+    $ node
+    > var librarian = require("./librarian");
+    > librarian.indexEverything();
+
+    // wait for deferred calls to finish ...
+
+    > librarian.search("flower");
+    36 matches found
+    1 ms elapsed
+    Best match:
+    32-Emily Dickinson-VII.
 
 
+    VII.
 
+    WITH A FLOWER.
+
+    I hide myself within my flower,
+    That wearing on your breast,
+    You, unsuspecting, wear me too --
+    And angels know the rest.
+
+    I hide myself within my flower,
+    That, fading from your vase,
+    You, unsuspecting, feel for me
+    Almost a loneliness.
 
 

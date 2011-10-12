@@ -273,7 +273,7 @@ function Collector(redisClient, redisDatabase) {
         self._calculateTermFrequency(id, terms, function(err) {
           self._calculateDocumentFrequency(id, terms, function(err) {
             self._calculateWeights(id, terms, function(err) {
-              if (callback) return callback(err, 'yay');
+              if (callback) return callback(err, 'read document with id ' + id);
             });
           });
         });
@@ -371,8 +371,8 @@ function Collector(redisClient, redisDatabase) {
 
         // process pairwise members: id, score, id, score, ...
         while (members.length) {
-          var id = parseInt(members.shift());
-          var score = parseFloat(members.shift());
+          var id = members.shift();
+          var score = parseFloat(members.shift(), 10);
           scores[id] = (scores[id] ? scores[id] : 0) + score;
           if (ids.indexOf(id) < 0) {
             ids.push(id);
@@ -382,6 +382,7 @@ function Collector(redisClient, redisDatabase) {
         if (iter == terms.length) {
           // sort ids by score, descending
           ids = ids.sort( function(a, b) { return scores[b] - scores[a] });
+
           return callback(null, ids);
         }
       });
