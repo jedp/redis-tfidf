@@ -1,0 +1,10 @@
+module.exports = {
+  redisHost: '127.0.0.1', 
+  redisPort: 6379,
+
+  filterStopWords: true,
+
+  /* you will want to change these */
+  redisDatabase: 42 
+  redisTestDatabase: 43 
+}
