@@ -1,3 +1,5 @@
+// Run me with nodeunit
+
 var _ = require('underscore');
 var r = require('redis').createClient();
 var collector = require('../collector');
@@ -5,6 +7,7 @@ var collector = require('../collector');
 var doc1 = {id:1, text:"I like pie."};
 var doc2 = {id:2, text:"I like potatoes."};
 var doc3 = {id:3, text:"I have an irrational love, yes I do, of flan."};
+var doc4 = {id:4, text:"I like pie and potatoes."};
 
 var testCase = require('nodeunit').testCase;
 var test_db = '_test_tfidf';

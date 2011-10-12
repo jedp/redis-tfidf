@@ -24,15 +24,16 @@ var IDS = 'ids'             // set  -> { document Ids }
 var _ = require('underscore');
 
 var r = require('redis').createClient();
-var stemmer = require('./lib/porter-stemmer/porter').memoizingStemmer;
+var stemmer = require('porter-stemmer').memoizingStemmer;
 
+//var stopWords = require('fs').readFileSync('./stop_words.txt').split('\n');
+
+// @@@ to do - filter out stop words
 function stemText(text) {
   return _.map(
     text.trim().split(/\s+/),
     function(t) { return stemmer(t.replace(/\W+/g, '').toLowerCase()) });
 }
-
-
 
 calculateWeight = function (id, term, callback) {
   // For a given term and document id, calculate the 
