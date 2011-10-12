@@ -1,8 +1,12 @@
 // Run me with nodeunit
 
 var _ = require('underscore');
-var r = require('redis').createClient();
+var config = require('../config');
+
 var collector = require('../collector');
+
+// Use the collector's redis instance in the tests
+var r = collector.r;
 
 var doc1 = {id:1, text:"I like pie."};
 var doc2 = {id:2, text:"I like potatoes."};
@@ -10,11 +14,11 @@ var doc3 = {id:3, text:"I have an irrational love, yes I do, of flan."};
 var doc4 = {id:4, text:"I like pie and potatoes."};
 
 var testCase = require('nodeunit').testCase;
-var test_db = '_test_tfidf';
+var test_db = config.redisTestDatabase;
 
 module.exports = testCase({
   setUp: function (callback) {
-      r.select(test_db, function(err, ok) {
+      collector.selectRedisDatabase(test_db, function(err, ok) {
         if (err) callback(err);
         r.flushdb(function (err, ok) {
           // index our three documents
@@ -27,7 +31,6 @@ module.exports = testCase({
       });
   },
   tearDown: function (callback) {
-    // clean up
     r.flushdb(callback);
   },
 
@@ -43,7 +46,7 @@ module.exports = testCase({
   testStoreTerms: function(test) {
     // terms for each document have been recorded
     test.expect(1);
-    r.smembers('doct:1', function(err, results) {
+    r.smembers('dt:1', function(err, results) {
       test.ok(!err && results.length===3);
       test.done();
     });
@@ -103,15 +106,15 @@ module.exports = testCase({
     // we know how many terms there are for each document
     test.expect(3);
 
-    r.zscore('len', 1, function(err, score) {
+    r.zscore('l', 1, function(err, score) {
       test.equal(score, 3);
     });
 
-    r.zscore('len', 2, function(err, score) {
+    r.zscore('l', 2, function(err, score) {
       test.equal(score, 3);
     });
 
-    r.zscore('len', 3, function(err, score) {
+    r.zscore('l', 3, function(err, score) {
       test.equal(score, 10);
     });
     
@@ -122,7 +125,7 @@ module.exports = testCase({
     // we should have a correct list of terms
     test.expect(1);
 
-    r.smembers('terms', function(err, terms) {
+    r.smembers('ts', function(err, terms) {
       // Terms should be:
       // [ 'an', 'do', 'flan', 'have',
       //   'i', 'irrat', 'like', 'love',
@@ -137,12 +140,12 @@ module.exports = testCase({
     // test relative weights
     test.expect(2);
 
-    r.zscore('weight:flan', 3, function(err, wgt) {
+    r.zscore('w:flan', 3, function(err, wgt) {
       // some number
       test.ok(wgt > 0);
     });
 
-    r.zscore('weight:flan', 1, function(err, wgt) {
+    r.zscore('w:flan', 1, function(err, wgt) {
       // null
       test.ok(!wgt);
     });
