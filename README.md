@@ -84,4 +84,16 @@ The resulting 231 poems can be quickly searched:
     You, unsuspecting, feel for me
     Almost a loneliness.
 
+Memory Use
+----------
+
+The memory use is not small.
+
+The example texts contain 712kB. 
+
+The resulting indexes in redis consume about 33MB.  
+
+So the memory required for the redis indexes is about 50 times the space used
+on disk to hold the original source text.
+
 
