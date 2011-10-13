@@ -4,6 +4,9 @@ redis-tfidf
 The Term-Frequency/Inverse-Document-Frequency IR algorithm 
 implemented using redis.
 
+This is an un-optimized, naive, and hopefully mostly-correct implementation 
+of the algorithm.  
+
 Indexing documents
 ------------------
 
@@ -91,11 +94,27 @@ The memory use is not small.
 
 The example texts contain 712kB. 
 
-The resulting indexes in redis consume about 33MB.  
+The resulting indexes in redis consume about 33MB.  (Using the total amount of
+memory reported by the redis `info` command, which is about 1MB high, as it
+includes redis's own system usage as well.)
 
 Using `config.filterStopWords === false`, this drops slightly to almost 32MB.
 
 So the memory required for the redis indexes is about 50 times the space used
-on disk to hold the original source text.
+on disk to hold the original source text.  Yargh!
 
+Is This Really Useful?
+----------------------
+
+I don't know.  It was interesting to make, but obviously its applicability is
+severely limited by the amount of memory consumed.  If you have 8GB memory, you
+could index 160MB of text.  That's not much.  A thousand documents?  Not so
+good.
+
+Optimizations could perhaps be found, but even so, its unscalability renders
+this implementation, used on typical machines, pretty undesirable for all but
+the most controlled cases.
+
+On the other hand, it demonstrates (as if it needed demonstrating) just how
+blazingly fast applications written around node and redis are.  
 
