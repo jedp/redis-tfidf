@@ -98,7 +98,7 @@ The resulting indexes in redis consume about 33MB.  (Using the total amount of
 memory reported by the redis `info` command, which is about 1MB high, as it
 includes redis's own system usage as well.)
 
-Using `config.filterStopWords === false`, this drops slightly to almost 32MB.
+Using `config.filterStopWords === true`, this drops slightly to almost 32MB.
 
 So the memory required for the redis indexes is about 50 times the space used
 on disk to hold the original source text.  Yargh!
