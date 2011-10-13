@@ -45,14 +45,29 @@ var poets = {
       'emily-dickinson-love.txt',
       'emily-dickinson-nature.txt'
     ],
+
   'Oscar Wilde': [
       'oscar-wilde.txt'
     ],
+
   'Robert Browning': [
       'robert-browning.txt'
     ],
+
   'William Blake': [
       'william-blake.txt'
+    ],
+
+  'Arthur Rimbaud': [
+      'arthur-rimbaud.txt'
+    ],
+
+  'Rainer Maria Rilke': [
+      'rainer-maria-rilke.txt'
+    ],
+
+  'Rudyard Kipling': [
+      'rudyard-kipling.txt'
     ]
 };
 
@@ -70,7 +85,7 @@ module.exports.indexEverything = function() {
         iter += 1;
 
         try {
-          var text = poems[i];
+          var text = poems[i].trim();
 
           // treat the first line as the title ...
           var title = text.match(/\w+.*/)[0];
@@ -101,6 +116,7 @@ module.exports.search = function(query) {
       redis.get(ids[0], function(err, text) {
         console.log("%d matches found", ids.length);
         console.log((end-start) + ' ms elapsed');
+        console.log(ids.join('\n'));
         console.log("Best match:");
         console.log(ids[0]);
         console.log(text);

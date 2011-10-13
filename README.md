@@ -57,7 +57,7 @@ Gutenberg.  The script `librarian.js` splits them up into poems, saves
 them in a redis store (could be anything - the text storage has nothing
 to do with the search mechanism itself), and indexes them.
 
-The resulting 231 poems can be quickly searched:
+The resulting 381 poems can be quickly searched:
 
     $ cd example
     $ node
@@ -67,8 +67,8 @@ The resulting 231 poems can be quickly searched:
     // wait for deferred calls to finish ...
 
     > librarian.search("flower");
-    36 matches found
-    1 ms elapsed
+    38 matches found
+    3 ms elapsed
     Best match:
     32-Emily Dickinson-VII.
 
@@ -92,24 +92,33 @@ Memory Use
 
 The memory use is not small.
 
-The example texts contain 712kB. 
+The example texts consist of 576 poems in three languages.  (By Arthur Rimbaud,
+Emily Dickinson, Oscar Wilde, Rainer Maria Rilke, Robert Browning (his
+"shorter" poems), Rudyard Kipling, and William Blake.)
 
-The resulting indexes in redis consume about 33MB.  (Using the total amount of
+These texts comprise 830kB in three languages (English, French, and German).
+Actually, you could probably count Rudyard Kipling as a language other than
+English, for the purposes of indexing.   
+
+The resulting indexes in redis consume about 80MB.  (Using the total amount of
 memory reported by the redis `info` command, which is about 1MB high, as it
 includes redis's own system usage as well.)
 
-Using `config.filterStopWords === true`, this drops slightly to almost 32MB.
+Using `config.filterStopWords === true`, this drops by 5 or 6 per cent.
 
-So the memory required for the redis indexes is about 50 times the space used
-on disk to hold the original source text.  Yargh!
+So the memory required for the redis indexes is 100 times higher than
+the space required to hold the original texts.  Yargh!
+
+I find that if all the texts are in the same language, the space requirements
+are around 50x.  Still a huge increase.
 
 Is This Really Useful?
 ----------------------
 
 I don't know.  It was interesting to make, but obviously its applicability is
 severely limited by the amount of memory consumed.  If you have 8GB memory, you
-could index 160MB of text.  That's not much.  A thousand documents?  Not so
-good.
+could index 160MB of text in the same language.  That's not much.  A thousand
+documents?  Not so good.
 
 Optimizations could perhaps be found, but even so, its unscalability renders
 this implementation, used on typical machines, pretty undesirable for all but
