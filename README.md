@@ -93,6 +93,8 @@ The example texts contain 712kB.
 
 The resulting indexes in redis consume about 33MB.  
 
+Using `config.filterStopWords === false`, this drops slightly to almost 32MB.
+
 So the memory required for the redis indexes is about 50 times the space used
 on disk to hold the original source text.
 

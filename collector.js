@@ -43,6 +43,8 @@
  *
  */
 
+var config = require('./config');
+
 var N = 'N';                // key  -> int
 var TF_PREFIX = 'tf:';      // zset -> { documentId, frequency }
 var DF_PREFIX = 'df:';      // set  -> { documentIds }
@@ -56,13 +58,16 @@ var _ = require('underscore');
 
 var stemmer = require('porter-stemmer').memoizingStemmer;
 
-//var stopWords = require('fs').readFileSync('./stop_words.txt').split('\n');
-
-// @@@ to do - filter out stop words?  or not?
-function stemText(text) {
-  return _.map(
-    text.trim().split(/\s+/),
-    function(t) { return stemmer(t.replace(/\W+/g, '').toLowerCase()) });
+var stopWords = {};
+if (config.filterStopWords) {
+  var fs = require('fs');
+  var words = fs.readFileSync(__dirname+'/stop_words.txt').toString().split('\n');
+  for (i in words) {
+    var word = words[i].trim();
+    if (word) {
+      stopWords[word] = true;
+    }    
+  }
 }
 
 function Collector(redisClient, redisDatabase) {
@@ -101,6 +106,27 @@ function Collector(redisClient, redisDatabase) {
       }
     });
   };
+
+  /*
+   * Utility
+   *
+   * stemText(string) -> [list, of, stems]
+   *
+   * If config.filterStopWords, stop words will be filtered out
+   */
+
+  self.stemText = function(text) {
+    var words = text.trim().split(/\s+/);
+    var stemmed = [];
+    for (i in words) {
+      var word = words[i];
+      if (! stopWords[word]) {
+        stemmed.push(stemmer(word.replace(/\W+/g, '').toLowerCase()));
+      }
+    }
+    return stemmed;
+  };
+
 
   /*
    * Private methods
@@ -266,7 +292,7 @@ function Collector(redisClient, redisDatabase) {
   self._readDocument = function(id, text, callback) {
     // Collect all terms and words in a document.
     // Remove extraneous characters and map to lower-case.
-    var terms = stemText(text);
+    var terms = self.stemText(text);
     
     self._updateDocumentLength(id, terms, function(err) {
       self._storeDocumentTerms(id, terms, function(err) {
@@ -359,7 +385,7 @@ function Collector(redisClient, redisDatabase) {
         console.log("search returned ids: %j", ids);
       }
     };
-    var terms = stemText(phrase);
+    var terms = self.stemText(phrase);
     var scores = {};
     var iter = 0;
     var ids = [];
@@ -391,8 +417,6 @@ function Collector(redisClient, redisDatabase) {
 
   return self.initialize(function() { return self });
 };
-
-var config = require('./config');
 
 module.exports = new Collector(
   require("redis").createClient(config.redisPort, config.redisHost),
