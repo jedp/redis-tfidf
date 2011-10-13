@@ -57,7 +57,7 @@ Gutenberg.  The script `librarian.js` splits them up into poems, saves
 them in a redis store (could be anything - the text storage has nothing
 to do with the search mechanism itself), and indexes them.
 
-The resulting 381 poems can be quickly searched:
+The resulting 576 poems can be quickly searched:
 
     $ cd example
     $ node
